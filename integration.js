@@ -1,58 +1,71 @@
 import http from 'k6/http';
-import { check, sleep } from 'k6';
-
-
-
-// Function for POST operation
-export function testPostUser() {
-  const payload = JSON.stringify({
-    name: 'John Doe',
-    job: 'Software Engineer',
-  });
-
-  const headers = {
-    'Content-Type': 'application/json',
-  };
-
-  let response = http.post('https://reqres.in/api/users', payload, { headers: headers });
-
-  check(response, {
-    'POST Status is 201': (r) => r.status === 201,
-    'POST Contains Expected Field': (r) => JSON.parse(r.body).hasOwnProperty('id'),
-    'POST Contains Expected Name Field': (r) => JSON.parse(r.body).hasOwnProperty('name'),
-    'POST Contains Expected Job Field': (r) => JSON.parse(r.body).hasOwnProperty('job'),
-  });
-
-  sleep(1);
-}
-
-// Function for PUT operation
-export function testPutUser() {
-
-  const payload = JSON.stringify({
-    name: 'Updated Name',
-    job: 'Senior Software Engineer',
-  });
-
-  const headers = {
-    'Content-Type': 'application/json',
-  };
-
-  let response = http.put(`https://reqres.in/api/users/2`, payload, { headers: headers });
-
-  check(response, {
-    'PUT Status is 200': (r) => r.status === 200,
-    'PUT Contains Expected Field': (r) => JSON.parse(r.body).hasOwnProperty('updatedAt'),
-    'PUT Contains Expected Name Field': (r) => JSON.parse(r.body).hasOwnProperty('name'),
-    'PUT Contains Expected Job Field': (r) => JSON.parse(r.body).hasOwnProperty('job'),
-  });
-
-  sleep(1);
-}
-
-// Default export function, which orchestrates the test
+import {
+  check,
+  sleep,
+  group
+} from 'k6';
+const BASE_URL = 'https://reqres.in';
 export default function () {
-  // Call your test functions here
-  testPostUser();
-  testPutUser();
+  const name = 'benu'
+  const job = 'sqa'
+   group('Create with valid request should success', function () {
+    const FULL_URL = BASE_URL + '/api/users';
+    const payload = JSON.stringify({
+        name : name,
+        job: job
+      })
+      const params = {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      };
+    
+ let res = http.post(FULL_URL, payload, params);
+    
+    check(res, {
+        'response code was 201': (res) => res.status == 201,
+    });
+    check(res, {
+        'response name should same with request': (res) => {
+            const response = JSON.parse(res.body);
+            return response.name === name
+        },
+    });
+    check(res, {
+        'response job should same with request': (res) => {
+            const response = JSON.parse(res.body);
+            return response.job === job
+        },
+    });
+  });
+  sleep(1);
+  group('update with valid request should success', function () {
+    const FULL_URL = BASE_URL + '/api/users/2';
+    const payload = JSON.stringify({
+      name: name,
+      job: job
+
+    })
+    const params = {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    };
+    let res = http.put(FULL_URL, payload, params);
+    check(res, {
+      'response code was 201': (res) => res.status == 200
+    });
+    check(res, {
+      'response name should same with request': (res) => {
+        const response = JSON.parse(res.body);
+        return response.name === name
+      }
+    });
+    check(res, {
+      'response job should same with request': (res) => {
+        const response = JSON.parse(res.body);
+        return response.job === job
+      }
+    });
+  });
 }
